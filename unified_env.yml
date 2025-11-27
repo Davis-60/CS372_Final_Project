@@ -1,0 +1,50 @@
+name: unified-env
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  
+  # 1. NEW PYTORCH (Satisfies LLaVA)
+  - pytorch=2.4.0
+  - torchvision=0.19.0
+  - torchaudio=2.4.0
+  - pytorch-cuda=12.1
+
+  # 2. SYSTEM BINARIES
+  - ffmpeg
+  - av
+
+  - pip
+  - pip:
+      # 3. JOINT DEPENDENCIES
+      # Transformers 4.44.2 is the sweet spot:
+      # - Has LLaVA code
+      # - Stable enough for MusicGen
+      - transformers==4.44.2
+      - tokenizers>=0.19.1
+      
+      # LLaVA Helpers
+      - accelerate>=0.21.0
+      - pillow
+      - requests
+      
+      # MusicGen Helpers (Safe to install)
+      - scipy
+      - librosa
+      - num2words
+      - encodec
+      - torchmetrics
+      - lightning-utilities
+      - soundfile
+      - einops
+      - omegaconf
+      - julius
+      - hydra-core
+      - sentencepiece
+      - protobuf
+      - spacy
+      - huggingface_hub  
+      - tqdm
