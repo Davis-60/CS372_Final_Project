@@ -9,7 +9,7 @@ An RTX a5000 on the Duke CS Clusters was used during development.
 
 ## Conda Environment Setup
 ### 1. Create the conda envirnonment with most dependencies
-    conda env create -f CS372_Final_Project/unified_env.yml
+    conda env create -f environment.yml
 
 ### 2. Activate the environment
     conda activate unified-env

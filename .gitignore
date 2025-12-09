@@ -1,4 +1,4 @@
-/Lora_Files/*
-/AI_Songs/*
-/Input_Videos/*
-/Output_Videos/*
+/models/videos
+/models/llava_video_checkpoints
+/data/
+

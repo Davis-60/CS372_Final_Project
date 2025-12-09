@@ -1,0 +1,40 @@
+name: unified-env
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pytorch=2.4.0
+  - torchvision=0.19.0
+  - torchaudio=2.4.0
+  - pytorch-cuda=12.1
+  - ffmpeg
+  - av
+  - pip
+  - pip:
+      - transformers==4.44.2
+      - tokenizers>=0.19.1
+      - accelerate>=0.21.0
+      - pillow
+      - requests
+      - scipy
+      - librosa
+      - num2words
+      - encodec
+      - torchmetrics
+      - lightning-utilities
+      - soundfile
+      - einops
+      - omegaconf
+      - julius
+      - hydra-core
+      - sentencepiece
+      - protobuf
+      - spacy
+      - huggingface_hub  
+      - tqdm
+      - flashy
+      - datasets
+
