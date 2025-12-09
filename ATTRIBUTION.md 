@@ -1,0 +1,13 @@
+## Author
+Developed by Davis Featherstone as a final project for Duke CS372.
+
+## External Models
+[`LLaVA-NeXT-Video-7B-hf` ](https://huggingface.co/llava-hf/LLaVA-NeXT-Video-7B-hf) (fine-tuned using LoRA)
+
+[`MusicGen-Large` ](https://huggingface.co/facebook/musicgen-large) by Meta
+
+## Training Data
+Lora training was done on a subset of ~650 videos and music captions from the [MM_Trail](https://arxiv.org/abs/2407.20962) dataset
+
+## AI Use
+Gemini 3 was used to assist in code-writing throughout the project. Specifically the Lora Training File `lora_llava.py` was almost entirely AI generated.

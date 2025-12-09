@@ -24,6 +24,7 @@ model = LlavaNextVideoForConditionalGeneration.from_pretrained(
 # 2. LOAD & MERGE LORA ADAPTER
 print(f"Loading LoRA Adapter from {ADAPTER_PATH}...")
 model = PeftModel.from_pretrained(model, ADAPTER_PATH)
+# model = model.merge_and_unload() #CHECK THIS
 model.eval()
 
 processor = LlavaNextVideoProcessor.from_pretrained(model_id)
@@ -58,7 +59,7 @@ def get_video_duration(video_path: str):
 
 
 def analyze_video(
-    video_path: str, prompt_text: str = "Describe the music in this video."
+    video_path: str, prompt_text: str = "Describe the music that would best compliment this video."
 ) -> str:
     logger.info(f"Analyzing Video at: {video_path}")
 
@@ -75,8 +76,8 @@ def analyze_video(
     # 2. VIDEO LOADING: Use 'with' to auto-close the file
     with av.open(video_path) as container:
         video = container.streams.video[0]
-        # Sample 32 frames uniformly
-        indices = np.arange(0, video.frames, video.frames / 32).astype(int)
+        # Sample 16 frames uniformly
+        indices = np.arange(0, video.frames, video.frames / 16).astype(int)
         clips = read_video_pyav(container, indices)
 
     # 3. TOKENIZE
@@ -91,7 +92,7 @@ def analyze_video(
     output = model.generate(
             **inputs_video, 
             max_new_tokens=100, 
-            do_sample=True,         # Turn OFF sampling (make it deterministic)
+            do_sample=True,         
             temperature = .7,
         )
 
@@ -107,11 +108,12 @@ if __name__ == "__main__":
     logging.basicConfig(
     level=logging.INFO,
 )
-    video_path = script_dir / "Input_Videos" / "horses.mp4"
-    output = analyze_video(video_path,)
-    video_path = script_dir / "Input_Videos" / "dog_show.mp4"
-    output = analyze_video(video_path,)
-    video_path = script_dir / "Input_Videos" / "tokyo_cars.mp4"
-    output = analyze_video(video_path,)
+    analyze_video(script_dir / "Input_Videos" / "horses.mp4",)
+    analyze_video(script_dir / "Input_Videos" / "dog_show.mp4",)
+    analyze_video(script_dir / "Input_Videos" / "nyc_night.mp4",)
+    analyze_video(script_dir / "Input_Videos" / "christmas.mp4",)
+    analyze_video(script_dir / "Input_Videos" / "rave.mp4",)
+
+
 
 
