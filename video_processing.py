@@ -2,30 +2,41 @@ import av
 import torch
 import numpy as np
 from pathlib import Path
-from huggingface_hub import hf_hub_download
 from transformers import LlavaNextVideoProcessor, LlavaNextVideoForConditionalGeneration
+import logging
+from peft import PeftModel
+
+script_dir = Path(__file__).resolve().parent
+logger = logging.getLogger(__name__)
+
+# Later checkpoints demonstrated overfitting
+ADAPTER_PATH =  script_dir / "Lora_Files" / "llava_video_checkpoints" / "checkpoint-249"
+
 
 model_id = "llava-hf/LLaVA-NeXT-Video-7B-hf"
 
 model = LlavaNextVideoForConditionalGeneration.from_pretrained(
-    model_id, 
-    torch_dtype=torch.float16, 
-    #Check if this is needed, will change if I can get more gpu memory
-    load_in_4bit=True,
-    low_cpu_mem_usage=True, 
+    model_id,
+    torch_dtype=torch.float16,
+    low_cpu_mem_usage=True,
 ).to(0)
+
+# 2. LOAD & MERGE LORA ADAPTER
+print(f"Loading LoRA Adapter from {ADAPTER_PATH}...")
+model = PeftModel.from_pretrained(model, ADAPTER_PATH)
+model.eval()
 
 processor = LlavaNextVideoProcessor.from_pretrained(model_id)
 
 def read_video_pyav(container, indices):
-    '''
+    """
     Decode the video with PyAV decoder.
     Args:
         container (`av.container.input.InputContainer`): PyAV container.
         indices (`List[int]`): List of frame indices to decode.
     Returns:
         result (np.ndarray): np array of decoded frames of shape (num_frames, height, width, 3).
-    '''
+    """
     frames = []
     container.seek(0)
     start_index = indices[0]
@@ -38,31 +49,69 @@ def read_video_pyav(container, indices):
     return np.stack([x.to_ndarray(format="rgb24") for x in frames])
 
 
-# define a chat history and use `apply_chat_template` to get correctly formatted prompt
-# Each value in "content" has to be a list of dicts with types ("text", "image", "video") 
-conversation = [
-    {
-
-        "role": "user",
-        "content": [
-            {"type": "text", "text": "Why is this video funny?"},
-            {"type": "video"},
-            ],
-    },
-]
-
-prompt = processor.apply_chat_template(conversation, add_generation_prompt=True)
+def get_video_duration(video_path: str):
+    container = av.open(video_path)
+    video = container.streams.video[0]
+    time = float(video.duration * video.time_base)
+    logger.info(f"Video at {video_path} is {time}s")
+    return time
 
 
-script_dir = Path(__file__).resolve().parent
-video_path = script_dir / "Input_Videos" / "waterfall.mp4"
-container = av.open(video_path)
+def analyze_video(
+    video_path: str, prompt_text: str = "Describe the music in this video."
+) -> str:
+    logger.info(f"Analyzing Video at: {video_path}")
 
-# sample uniformly 8 frames from the video, can sample more for longer videos
-total_frames = container.streams.video[0].frames
-indices = np.arange(0, total_frames, total_frames / 8).astype(int)
-clip = read_video_pyav(container, indices)
-inputs_video = processor(text=prompt, videos=clip, padding=True, return_tensors="pt").to(model.device)
+    prompt = processor.apply_chat_template( [
+        {
+            "role": "user",
+            "content": [
+                {"type": "video"},
+                {"type": "text", "text": prompt_text},
+                ],
+        },
+    ], add_generation_prompt=True)
 
-output = model.generate(**inputs_video, max_new_tokens=100, do_sample=False)
-print(processor.decode(output[0][2:], skip_special_tokens=True))
+    # 2. VIDEO LOADING: Use 'with' to auto-close the file
+    with av.open(video_path) as container:
+        video = container.streams.video[0]
+        # Sample 32 frames uniformly
+        indices = np.arange(0, video.frames, video.frames / 32).astype(int)
+        clips = read_video_pyav(container, indices)
+
+    # 3. TOKENIZE
+    inputs_video = processor(
+        text=prompt, 
+        videos=clips, 
+        padding=True, 
+        return_tensors="pt"
+    ).to(model.device)
+
+    # 4. GENERATE
+    output = model.generate(
+            **inputs_video, 
+            max_new_tokens=100, 
+            do_sample=True,         # Turn OFF sampling (make it deterministic)
+            temperature = .7,
+        )
+
+    # 5. DECODE
+    generated_ids = output[0][len(inputs_video.input_ids[0]):]
+    final_output = processor.decode(generated_ids, skip_special_tokens=True).strip()
+    
+    logger.info(f"Video Description: {final_output}")
+    return final_output
+
+
+if __name__ == "__main__":
+    logging.basicConfig(
+    level=logging.INFO,
+)
+    video_path = script_dir / "Input_Videos" / "horses.mp4"
+    output = analyze_video(video_path,)
+    video_path = script_dir / "Input_Videos" / "dog_show.mp4"
+    output = analyze_video(video_path,)
+    video_path = script_dir / "Input_Videos" / "tokyo_cars.mp4"
+    output = analyze_video(video_path,)
+
+

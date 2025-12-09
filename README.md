@@ -1,19 +1,7 @@
-## General Environment Info
-
-If there are problems with a misconfigured chanel run `unset CONDA_CHANNELS`
-
-Keep seperate environments for the two models
-    
-
-## Music Env
-conda env create -f CS372_Final_Project/music_env.yml
-conda activate final-project-env
-python -m pip install "xformers==0.0.22.post7" audiocraft --no-deps
-
-## Unified Environment (I don't have this working yet)
-conda env create -f CS372_Final_Project/unified_env.yml
-conda activate unified-env
-python -m pip install "xformers==0.0.27.post2" audiocraft bitsandbytes --no-deps
+## Conda Environment Setup
+    conda env create -f CS372_Final_Project/unified_env.yml
+    conda activate unified-env
+    python -m pip install "xformers==0.0.27.post2" "peft==0.6.0" audiocraft --no-deps
 
 
 ## Aquiring Testing Videos
@@ -21,4 +9,10 @@ python -m pip install "xformers==0.0.27.post2" audiocraft bitsandbytes --no-deps
     `yt-dlp -f "bv*[height>=720]+ba"`
 
     downscale with `ffmpeg` if needed
+
+        ffmpeg -i Desktop/Beautiful\ Rescue\ Horses\ Run\ By\ \[jMe2QUZhOxQ\].mkv  -vf scale=-1:720 -c:v libx264 -crf 18 -preset slow -c:a aac horses.mp4
+
+## Requesting GPU (Extra Slurm Argument)
+
+    --gres=gpu:a5000
     
